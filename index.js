@@ -1,17 +1,38 @@
-var bitcoin = require('bitcoinjs-lib')
-var testnet = bitcoin.networks.testnet
+// This script helps customers send their shitcoins out of a SegWit P2SH(P2WPKH) address
+// (for a 4% service fee to undercut competition)
+// Right now it runs on BITCOIN TESTNET and only supports 1 input
 
-const serviceFeePercent = 0.04
+// Enter customer's private key corresponding to their SegWit P2SH(P2WPKH) address
+const inputPrivateKey = 'cNBCLzxuPygDygtgSEdqu8jeig4tvNxr3oMTJaL7uT7mqt4iagJr' //address is 2N4ke6EfP3m5qmx7yWNZxq8HhTM5wKuZK9o
+
+// Manually derive the customer's SegWit P2SH(P2WPKH) address from the private key.
+// Then go to https://testnet.blockexplorer.com/api/addr/CUSTOMER_ADDRESS_FROM_PRIVATE_KEY/utxo
+// From that page copy and paste the txid below:
+const inputTxId = '0e05f3eb3ce168466bfbbf3cd6feeed75b66840424df817aac03aacf4080b702'
+// From the same page copy and paste the vout number below:
+const inputTxIdvout = 1
+// From the same page copy and paste the tx amount in satoshis below:
+const inputAmount = btc_to_satoshis(0.5865438)
+
+// Enter customer's output address for the shitcoin
+const outputAddress = 'mpVKw3WquXncCDkdHSv2HjWVBTngAyVJfT'
+
+// Enter desired shitcoin network fee in satoshi
 const networkFee = 300000
+
+// Configure 4% service fee
+const serviceFeePercent = 0.04
+// Your shitcoin address to collect the 4% service fee
 const serviceFeeOutputAddress = 'mhRisqNUWMt6bpB9uWLHx3bSBVP4EqUrTS'
 
-const inputPrivateKey = 'cNBCLzxuPygDygtgSEdqu8jeig4tvNxr3oMTJaL7uT7mqt4iagJr' //testnet
-const inputTxId = '0e05f3eb3ce168466bfbbf3cd6feeed75b66840424df817aac03aacf4080b702'
-const inputAmount = btc_to_sats(0.5865438)
+//////////////////////////
+// END OF CONFIGURATION //
+//////////////////////////
 
+var bitcoin = require('bitcoinjs-lib')
+var testnet = bitcoin.networks.testnet
 const serviceFeeAmount = Math.ceil(inputAmount * serviceFeePercent)
 const outputAmount = inputAmount - serviceFeeAmount - networkFee
-const outputAddress = 'mpVKw3WquXncCDkdHSv2HjWVBTngAyVJfT'
 
 
 // copy paste from https://github.com/bitcoinjs/bitcoinjs-lib/blob/master/test/integration/transactions.js#L151
@@ -43,13 +64,13 @@ console.log("Service fee amount:", sats_to_btc(serviceFeeAmount))
 
 var txb = new bitcoin.TransactionBuilder(testnet)
 // var txb = new bitcoin.TransactionBuilder()
-txb.addInput(inputTxId, 1) // vout from https://testnet.blockexplorer.com/api/addr/2N4ke6EfP3m5qmx7yWNZxq8HhTM5wKuZK9o/utxo
+txb.addInput(inputTxId, inputTxIdvout)
 txb.addOutput(outputAddress, outputAmount)
 txb.addOutput(serviceFeeOutputAddress, serviceFeeAmount)
 txb.sign(0, keyPair, redeemScript, null, inputAmount)
 
 var tx = txb.build().toHex()
-console.log("\n\nRaw TX:")
+console.log("\n\nRaw TX below, paste it into https://live.blockcypher.com/btc-testnet/pushtx to broadcast")
 console.log(tx)
 
 
@@ -76,7 +97,7 @@ request.post({
 
 
 
-function btc_to_sats(btc) {
+function btc_to_satoshis(btc) {
     return Math.round(btc*100000000)
 }
 function sats_to_btc(sats) {
